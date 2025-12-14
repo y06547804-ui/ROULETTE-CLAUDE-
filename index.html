@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roue de la Fortune</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #fff;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .wheel-container {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto 30px;
+      aspect-ratio: 1;
+    }
+
+    .wheel-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,0.4));
+    }
+
+    #wheel {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      position: relative;
+      transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+      border: 8px solid #fff;
+      box-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+
+    #wheel.spinning {
+      transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    }
+
+    #wheel.wobble {
+      animation: wobble 0.3s ease-in-out;
+    }
+
+    @keyframes wobble {
+      0%, 100% { transform: rotate(var(--final-rotation)) scale(1); }
+      25% { transform: rotate(calc(var(--final-rotation) - 2deg)) scale(1.02); }
+      75% { transform: rotate(calc(var(--final-rotation) + 2deg)) scale(1.02); }
+    }
+
+    .segment {
+      position: absolute;
+      width: 50%;
+      height: 50%;
+      transform-origin: 100% 100%;
+      clip-path: polygon(0 0, 100% 0, 100% 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .segment-content {
+      position: absolute;
+      top: 20%;
+      left: 60%;
+      transform: rotate(0deg);
+      font-weight: bold;
+      font-size: 1.5em;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      pointer-events: none;
+    }
+
+    /* Indicateur (pointeur en haut) */
+    .pointer {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 40px solid #ffd700;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+      z-index: 10;
+    }
+
+    /* Centre de la roue */
+    .center-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .controls {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    button {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2em;
+      font-weight: bold;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      color: #333;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .stats {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .stat-item {
+      background: rgba(255,255,255,0.1);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.8;
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #ffd700;
+    }
+
+    .history {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px;
+    }
+
+    .history h3 {
+      margin-bottom: 15px;
+    }
+
+    .history-list {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .history-item {
+      background: rgba(255,255,255,0.2);
+      padding: 8px 15px;
+      border-radius: 8px;
+      font-weight: bold;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .result-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      padding: 40px 60px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      z-index: 1000;
+      transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      color: #333;
+      text-align: center;
+    }
+
+    .result-popup.show {
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .result-popup h2 {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+
+    .result-popup p {
+      font-size: 1.2em;
+    }
+
+    .settings {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .setting-item label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.8em;
+      }
+      
+      .segment-content {
+        font-size: 1.2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎰 Roue de la Fortune</h1>
+
+    <div class="settings">
+      <h3>⚙️ Paramètres</h3>
+      <div class="setting-item">
+        <label>
+          <input type="checkbox" id="antiStreak" checked>
+          Anti-streak (empêche 2 gros gains consécutifs)
+        </label>
+      </div>
+      <div class="setting-item">
+        <label>
+          <input type="checkbox" id="pitySystem" checked>
+          Pity system (boost après mauvaise série)
+        </label>
+      </div>
+    </div>
+
+    <div class="wheel-container">
+      <div class="wheel-wrapper">
+        <div class="pointer"></div>
+        <div id="wheel"></div>
+        <div class="center-circle">SPIN</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="spinBtn">🎲 LANCER LA ROUE</button>
+    </div>
+
+    <div class="stats">
+      <h3>📊 Statistiques</h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Tours joués</div>
+          <div class="stat-value" id="totalSpins">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Dernier gain</div>
+          <div class="stat-value" id="lastWin">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Multiplicateur moyen</div>
+          <div class="stat-value" id="avgMultiplier">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Mauvais streak</div>
+          <div class="stat-value" id="badStreak">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="history">
+      <h3>📜 Historique (10 derniers)</h3>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+  <div class="result-popup" id="resultPopup">
+    <h2 id="resultValue"></h2>
+    <p>Félicitations !</p>
+  </div>
+
+  <script>
+    // ==========================================
+    // 🎲 CONFIGURATION DES SEGMENTS
+    // ==========================================
+    const segments = [
+      { label: "×0.5", weight: 40, color: "#e74c3c" },
+      { label: "×1", weight: 30, color: "#3498db" },
+      { label: "×1.5", weight: 15, color: "#9b59b6" },
+      { label: "×2", weight: 10, color: "#f39c12" },
+      { label: "×3", weight: 4, color: "#1abc9c" },
+      { label: "×5", weight: 1, color: "#ffd700" }
+    ];
+
+    // ==========================================
+    // 🎨 CRÉATION VISUELLE DE LA ROUE
+    // ==========================================
+    function createWheel() {
+      const wheel = document.getElementById('wheel');
+      const totalSegments = segments.length;
+      const anglePerSegment = 360 / totalSegments;
+
+      segments.forEach((segment, index) => {
+        const segmentDiv = document.createElement('div');
+        segmentDiv.className = 'segment';
+        segmentDiv.style.background = segment.color;
+        segmentDiv.style.transform = `rotate(${index * anglePerSegment}deg)`;
+
+        const content = document.createElement('div');
+        content.className = 'segment-content';
+        content.textContent = segment.label;
+        content.style.transform = `rotate(${anglePerSegment / 2}deg)`;
+
+        segmentDiv.appendChild(content);
+        wheel.appendChild(segmentDiv);
+      });
+    }
+
+    // ==========================================
+    // 🧮 SYSTÈME DE TIRAGE PONDÉRÉ
+    // ==========================================
+    class WeightedLottery {
+      constructor(items) {
+        this.items = items;
+        this.totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+      }
+
+      // Normalise automatiquement les poids
+      draw() {
+        let random = Math.random() * this.totalWeight;
+        
+        for (let i = 0; i < this.items.length; i++) {
+          random -= this.items[i].weight;
+          if (random <= 0) {
+            return i;
+          }
+        }
+        
+        return this.items.length - 1; // Sécurité
+      }
+
+      // Modifie temporairement les poids (pour anti-streak et pity)
+      drawWithModifiers(antiStreakIndex = null, pityBoost = 0) {
+        const modifiedItems = this.items.map((item, index) => {
+          let weight = item.weight;
+
+          // Anti-streak : réduit drastiquement les chances du gros gain précédent
+          if (antiStreakIndex !== null && this.isHighValue(index) && index === antiStreakIndex) {
+            weight *= 0.1; // 90% de réduction
+          }
+
+          // Pity system : boost les gros gains après mauvaise série
+          if (pityBoost > 0 && this.isHighValue(index)) {
+            weight *= (1 + pityBoost * 0.5); // +50% par niveau de pity
+          }
+
+          return { ...item, weight };
+        });
+
+        const lottery = new WeightedLottery(modifiedItems);
+        return lottery.draw();
+      }
+
+      isHighValue(index) {
+        // Définit les "gros gains" (×3 et ×5)
+        return index >= 4;
+      }
+    }
+
+    // ==========================================
+    // 🎮 GESTIONNAIRE DE JEU
+    // ==========================================
+    class GameManager {
+      constructor() {
+        this.lottery = new WeightedLottery(segments);
+        this.history = [];
+        this.totalSpins = 0;
+        this.lastWinIndex = null;
+        this.badStreakCount = 0; // Compte les tours sans gros gain
+        this.isSpinning = false;
+
+        // Options
+        this.antiStreakEnabled = true;
+        this.pitySystemEnabled = true;
+      }
+
+      spin() {
+        if (this.isSpinning) return;
+
+        this.isSpinning = true;
+        this.totalSpins++;
+
+        // Calcul du pity boost
+        const pityBoost = this.pitySystemEnabled ? Math.min(Math.floor(this.badStreakCount / 5), 3) : 0;
+
+        // Anti-streak : empêche le même gros gain 2 fois de suite
+        const antiStreakIndex = (this.antiStreakEnabled && this.lottery.isHighValue(this.lastWinIndex)) 
+          ? this.lastWinIndex 
+          : null;
+
+        // 🎲 TIRAGE AU SORT (C'est ici que le gagnant est déterminé)
+        const winnerIndex = this.lottery.drawWithModifiers(antiStreakIndex, pityBoost);
+        const winner = segments[winnerIndex];
+
+        // Mise à jour des statistiques de streak
+        if (this.lottery.isHighValue(winnerIndex)) {
+          this.badStreakCount = 0;
+        } else {
+          this.badStreakCount++;
+        }
+
+        this.lastWinIndex = winnerIndex;
+        this.history.unshift(winner.label);
+        if (this.history.length > 10) this.history.pop();
+
+        // 🎡 ANIMATION (doit correspondre EXACTEMENT au résultat)
+        this.animateWheel(winnerIndex, winner);
+
+        this.updateUI();
+      }
+
+      animateWheel(winnerIndex, winner) {
+        const wheel = document.getElementById('wheel');
+        const spinBtn = document.getElementById('spinBtn');
+        
+        spinBtn.disabled = true;
+
+        // Calcul de l'angle exact pour que le segment gagnant soit en haut
+        const anglePerSegment = 360 / segments.length;
+        const baseAngle = -winnerIndex * anglePerSegment;
+        
+        // Ajoute des tours complets pour l'effet (5-7 tours)
+        const extraRotations = (5 + Math.random() * 2) * 360;
+        
+        // Ajuste légèrement pour centrer le segment sous le pointeur
+        const centerOffset = anglePerSegment / 2;
+        
+        const finalRotation = extraRotations + baseAngle + centerOffset;
+
+        // Application de la rotation
+        wheel.style.setProperty('--final-rotation', `${finalRotation}deg`);
+        wheel.classList.add('spinning');
+        wheel.style.transform = `rotate(${finalRotation}deg)`;
+
+        // Effets sonores simulés (clic clic)
+        const tickInterval = setInterval(() => {
+          // Ici on pourrait ajouter un vrai son
+          console.log('tick');
+        }, 100);
+
+        // Après l'animation
+        setTimeout(() => {
+          clearInterval(tickInterval);
+          wheel.classList.remove('spinning');
+          wheel.classList.add('wobble');
+
+          setTimeout(() => {
+            wheel.classList.remove('wobble');
+            this.showResult(winner.label);
+            spinBtn.disabled = false;
+            this.isSpinning = false;
+          }, 300);
+        }, 4000);
+      }
+
+      showResult(value) {
+        const popup = document.getElementById('resultPopup');
+        const resultValue = document.getElementById('resultValue');
+        
+        resultValue.textContent = value;
+        popup.classList.add('show');
+
+        setTimeout(() => {
+          popup.classList.remove('show');
+        }, 2000);
+      }
+
+      updateUI() {
+        document.getElementById('totalSpins').textContent = this.totalSpins;
+        document.getElementById('lastWin').textContent = this.history[0] || '-';
+        document.getElementById('badStreak').textContent = this.badStreakCount;
+
+        // Calcul du multiplicateur moyen
+        if (this.history.length > 0) {
+          const avg = this.history.reduce((sum, label) => {
+            const mult = parseFloat(label.replace('×', ''));
+            return sum + mult;
+          }, 0) / this.history.length;
+          document.getElementById('avgMultiplier').textContent = avg.toFixed(2) + '×';
+        }
+
+        // Historique
+        const historyList = document.getElementById('historyList');
+        historyList.innerHTML = this.history
+          .map(label => `<div class="history-item">${label}</div>`)
+          .join('');
+      }
+    }
+
+    // ==========================================
+    // 🚀 INITIALISATION
+    // ==========================================
+    createWheel();
+    const game = new GameManager();
+
+    document.getElementById('spinBtn').addEventListener('click', () => game.spin());
+
+    document.getElementById('antiStreak').addEventListener('change', (e) => {
+      game.antiStreakEnabled = e.target.checked;
+    });
+
+    document.getElementById('pitySystem').addEventListener('change', (e) => {
+      game.pitySystemEnabled = e.target.checked;
+    });
+
+    // Debug : affiche les probabilités théoriques
+    console.log('📊 Probabilités théoriques :');
+    const total = segments.reduce((sum, s) => sum + s.weight, 0);
+    segments.forEach(s => {
+      console.log(`${s.label}: ${(s.weight / total * 100).toFixed(2)}%`);
+    });
+  </script>
+</body>
+</html>
